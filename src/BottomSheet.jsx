@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef , useCallback} from 'react';
 
 const tagColorClasses = {
   teal: 'bg-teal/10 text-teal',
@@ -131,45 +131,49 @@ const BottomSheet = ({ isOpen, onClose, creator }) => {
   };
 
   // Drag handlers
-  const handleDragStart = (e) => {
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    startYRef.current = y;
-    setIsDragging(true);
-  };
+  const handleDragStart = useCallback((e) => {
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  startYRef.current = y;
+  setIsDragging(true);
+}, []);
 
-  const handleDragMove = (e) => {
-    if (!isDragging) return;
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    const delta = Math.max(0, y - startYRef.current);
-    setDragY(delta);
-  };
+const handleDragMove = useCallback((e) => {
+  if (!isDragging) return;
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  const delta = Math.max(0, y - startYRef.current);
+  setDragY(delta);
+}, [isDragging]);
 
-  const handleDragEnd = (e) => {
-    if (!isDragging) return;
-    const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-    const delta = y - startYRef.current;
-    setIsDragging(false);
-    setDragY(0);
-    
-    if (delta > 100) {
-      onClose();
-    }
-  };
+const handleDragEnd = useCallback((e) => {
+  if (!isDragging) return;
+  const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+  const delta = y - startYRef.current;
+
+  setIsDragging(false);
+  setDragY(0);
+
+  if (delta > 100) {
+    onClose();
+  }
+}, [isDragging, onClose]);
+
+
 
   useEffect(() => {
-    const handleMouseMove = (e) => handleDragMove(e);
-    const handleMouseUp = (e) => handleDragEnd(e);
-    
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
+  const handleMouseMove = (e) => handleDragMove(e);
+  const handleMouseUp = (e) => handleDragEnd(e);
+
+  if (isDragging) {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }
+
+  return () => {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+  };
+  }, [isDragging, handleDragMove, handleDragEnd]);
+
 
   // Canvas resize
   useEffect(() => {
